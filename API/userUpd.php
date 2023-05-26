@@ -43,27 +43,28 @@
     if($postData["userName"] == "" && $postData["password"] == "" && $postData["profile"] == "" ){
        errResult('002');
        exit();
+    }else{
+        $userName = $postData["userName"];
+        $pass = $postData["password"];
+        $profile = $postData["profile"];
     }
     
     require_once "./common/mysqlConnect.php";  //database接続
     
     try{
         $pdo->beginTransaction();
-        
+
         //ユーザデータを更新するSQL文を実行する
         // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-       $sql = "UPDATE user SET userName　= :userName, password  = :password, profile  = :profile WHERE userId = :userId";
-        echo($sql);
+        $sql = "UPDATE user SET userName = :userName, password = :password, profile  = :profile WHERE userId = :userId";
         
         $stmt = $pdo->prepare($sql);   
         $stmt -> bindParam(":userName",$userName,PDO::PARAM_STR);
-        $stmt -> bindParam(":password",$password,PDO::PARAM_STR);
+        $stmt -> bindParam(":password",$pass,PDO::PARAM_STR);
         $stmt -> bindParam(":profile",$profile,PDO::PARAM_STR);
-        
+        $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
         
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果がfalseでないかチェックする
-            
-            echo "更新完了しました。";
             $pdo->commit(); // 成功したらコミット
             $response["result"]= "success";
         } else {
