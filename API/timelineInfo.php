@@ -53,7 +53,7 @@
             
             $sql2 = "select w.whisperNo,gi.userId,u.userName,w.postdate,w.content";
             $sql2 .= " from goodInfo as gi join whisper as w on gi.whisperNo = w.whisperNo join user as u on w.userId = u.userId left join (select userId, true as flag  from goodinfo where userId =:LoginUserId) as g on u.userId = g.userId";
-            $sql2 .= " where gi.userId = :userId order by w.postdate desc;";
+            $sql2 .= " where gi.userId = :userId;";
             
             $sql = $sql1 + 'union ' + $sql2;
             
