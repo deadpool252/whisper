@@ -29,3 +29,8 @@ create table goodInfo(
 );
 
 
+create view goodCntView (whisperNo, cnt) as select whisperNo, count(userId) from goodinfo group by whisperNo;
+create view whisperCntView(userId, cnt) as Select userId, count(content) from whisper group by userId;
+create view followerCntView (followUserId, cnt) as select followUserId, count(userId) from follow group by followUserId;
+create view followCntView (userId, cnt) as select userId, count(followUserId) from follow group by userId;
+
