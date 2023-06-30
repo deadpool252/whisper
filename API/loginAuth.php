@@ -57,7 +57,7 @@
     
     try{
         // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-        $sql = "SELECT * FROM USER ";
+        $sql = "SELECT * FROM user ";
         $sql .= "WHERE USERID = :userId and PASSWORD = :password;";
         
         $stmt = $pdo->prepare($sql);   
@@ -66,7 +66,6 @@
         $stmt -> execute();
         
         while($row = $stmt->fetch()){
-
             $response["list"][] = [
                 "userId" => $row["userId"],
                 "password" => $row["password"]

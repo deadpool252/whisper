@@ -40,14 +40,14 @@
        exit();
     }
      //パラメータチェック
-    if($postData["userName"] == "" && $postData["password"] == "" && $postData["profile"] == "" ){
+    if($postData["userName"] == "" && $postData["password"] == ""){
        errResult('002');
        exit();
     }else{
         $userName = $postData["userName"];
         $pass = $postData["password"];
-        $profile = $postData["profile"];
     }
+    $profile = $postData["profile"];
     
     require_once "./common/mysqlConnect.php";  //database接続
     

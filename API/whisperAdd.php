@@ -60,15 +60,12 @@
         // 送られてきたユーザIDとパスワードと一致するデータを取得する     
         $sql = "INSERT INTO whisper(userId , content) ";
         $sql .= "VALUES(:userId , :content);";
-        echo($sql);
         
         $stmt = $pdo->prepare($sql);   
         $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
         $stmt -> bindParam(":content",$content,PDO::PARAM_STR);        
         
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果がfalseでないかチェックする
-            
-            echo "行の追加に成功しました。";
             $pdo->commit(); // 成功したらコミット
             $response["result"]= "success";
         } else {

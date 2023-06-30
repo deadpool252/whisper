@@ -64,8 +64,7 @@
             //３－１．フォローデータを挿入するSQL文を実行する。
             //登録テーブル：フォロー情報。
             //登録データ：inputパラーメータのユーザID、フォローユーザID
-            $sql = "INSERT INTO follow(userId , followUserId) VALUES(:userId , :followUserId );";
-            echo($sql);
+            $sql = "INSERT INTO follow(userId , followUserId) VALUES(:userId , :followUserId )";
              
             $stmt = $pdo->prepare($sql);   
             $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
@@ -79,7 +78,6 @@
             //削除テーブル：フォロー情報
             //登録データ：inputパラーメータのユーザID、フォローユーザID
             $sql = "DELETE FROM follow WHERE userId = :userId AND followUserId = :followUserId ";
-            echo($sql);
              
             $stmt = $pdo->prepare($sql);   
             $stmt -> bindParam(":userId",$userId, PDO::PARAM_STR);
@@ -89,7 +87,6 @@
         
         //５．データベースのコミット命令を実行する。
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果チェックする
-            echo "SQL文、実行完了 ";
             $pdo->commit(); // 成功したらコミット
             $response["result"]= "success";
         } else {

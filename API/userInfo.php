@@ -49,7 +49,6 @@
         $stmt -> execute();
         
         while($row = $stmt->fetch()){
-
             $response["list"][] = [
                 "userName" => $row["userName"],
                 "profile" => $row["profile"],

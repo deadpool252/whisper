@@ -66,22 +66,28 @@
     try{
         
             // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-            $sql = "select u.userName,u.profile, f.cnt as f_cnt, fu.cnt as fu_cnt ";
-            $sql .= "from user as u join  followCntView as f  on u.userId = f.userId join followerCntView as fu on u.userId = fu.followUserId ";
-            $sql .= "where u.userId = :userId";
+            $sql = "select u.userId, u.userName, u.profile, w.cnt as whisperCnt, fl.cnt as followCnt, fr.cnt as followerCnt ";
+            $sql .= "from user u left join whisperCntView w on w.userId=u.userId left join followCntView fl on fl.userId=w.userId left join followerCntView fr on fr.followUserId=w.userId ";
+            $sql .= "WHERE u.userId = :userId";
 
             $stmt = $pdo->prepare($sql);   
             $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
             $stmt -> execute();
 
             while($row = $stmt->fetch()){
-              
                 $response["userId"] = $row["userId"];
                 $response["userName"] = $row["userName"];
                 $response["profile"] = $row["profile"];
-                $response["followCount"] = $row["f_cnt"];
-                $response["followerCount"] = $row["fu_cnt"];
-                
+                if($row["followCnt"]==null){
+                    $response["followCount"] = 0;
+                }else{
+                    $response["followCount"] = $row["followCnt"];
+                }
+                if($row["followerCnt"]==null){
+                    $response["followerCount"] = 0;
+                }else{
+                    $response["followerCount"] = $row["followerCnt"];
+                }
                 if($row==null){
                     errResult('004');
                     exit();
@@ -92,85 +98,79 @@
             $sql = "select count(followUserId) as cnt from follow where userId = :userId and followUserId = :LoginUserId";
 
             $stmt = $pdo->prepare($sql);   
-            $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt -> bindParam(":LoginUserId",$LoginUserId,PDO::PARAM_STR);
+            $stmt -> bindParam(":userId",$LoginUserId,PDO::PARAM_STR);
+            $stmt -> bindParam(":LoginUserId",$userId,PDO::PARAM_STR);
             $stmt -> execute();
 
             while($row = $stmt->fetch()){
-               
-                if($row==null){
-                    errResult('004');
-                    exit();
-                }else{
-                    $response["userFollowFlg"]= true;
+                if($row["cnt"]==1){
+                    $response["userFollowFlg"] = TRUE;
                 }
             }
             $stmt=null;
             
-            $sql1 = "select w.whisperNo,u.userId,u.userName,w.postdate,w.content";
-            $sql1 .= " from whisper as w join user as u on w.userId = u.userId leftjoin (select useId, true as flag  from goodinfo where userId =:LoginuserId) as g on u.userId = g.userId";
-            $sql1 .= " where u.userId = :userId order by w.postdate desc;";
-            $stmt1 = $pdo->prepare($sql1);   
-            $stmt1 -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt1 -> execute();
+            $sql1 = "SELECT w.whisperNo, w.userId, u.userName, w.postDate, w.content ";
+            $sql1 .= "FROM whisper w left join user u on u.userId = w.userId ";
+            $sql1 .= "where w.userId = :userId order by w.postDate DESC";
+            $stmt = $pdo->prepare($sql1);   
+            $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
+            $stmt -> execute();
 
-            while($row = $stmt1->fetch()){
-                
+            while($row = $stmt->fetch()){
                 if($row==null){
                     errResult('004');
                     exit();
                 }
-                
-                $response["whisperList"][] = [
-                    
+                // $flag = TRUE;
+                // if($row["loginUser"]==null){
+                //     $flag = FALSE;
+                // }
+                array_push($response["whisperList"],[
+                    "whisperNo" => $row["whisperNo"],
                     "userId" => $row["userId"],
                     "userName" => $row["userName"],
                     "postDate" => $row["postDate"],
                     "content" => $row["content"],
-                    "goodCount" => $row["g_cnt"],
-           
-                ];
-                if($row["flag"]!= null){
-                    $response["WhisperList"]["goodFlg"]= true; 
-                }else{
-                    $response["WhisperList"]["goodFlg"]= false; 
-                }
-              
+                    "goodFlg" => FALSE
+                ]);
             }
-            $stmt1=null;
+            $stmt=null;
+
+            for ($i=0; $i<count($response["whisperList"]);$i++){
+                $sql = "select userId, whisperNo from goodInfo where whisperNo = :whisperNo and userId = :LoginUserId";
+                $stmt = $pdo->prepare($sql);
+                $stmt -> bindParam(":whisperNo",$response["whisperList"][$i]["whisperNo"],PDO::PARAM_STR);
+                $stmt -> bindParam(":LoginUserId",$LoginUserId,PDO::PARAM_STR);
+                $stmt -> execute();
+                while($row = $stmt->fetch()){
+                    $response["whisperList"][$i]["goodFlg"] = TRUE;
+                }
+                $stmt=null;
+            }
             
-            $sql2 = "select w.whisperNo,gi.userId,u.userName,w.postdate,w.content";
-            $sql2 .= " from goodInfo as gi join whisper as w on gi.whisperNo = w.whisperNo join user as u on w.userId = u.userId left join (select userId, true as flag  from goodinfo where userId =:LoginUserId) as g on u.userId = g.userId";
-            $sql2 .= " where gi.userId = :userId order by w.postdate desc;";
-            $stmt2 = $pdo->prepare($sql2);   
-            $stmt2 -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt2 -> bindParam(":LoginUserId",$userId,PDO::PARAM_STR);
-            $stmt2 -> execute();
+            $sql1 = "select w.whisperNo, w.userId, u.userName, w.postDate, w.content, g.whisperno, g.cnt ";
+            $sql1 .= "from whisper w left join user u on u.userId=w.userId left join goodCntView g on g.whisperNo=w.whisperNo ";
+            $sql1 .= "where w.userId = :userId order by w.postDate DESC";
+            $stmt = $pdo->prepare($sql1);   
+            $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
+            $stmt -> execute();
 
-            while($row = $stmt2->fetch()){
-                
-                if($row==null){
-                    errResult('004');
-                    exit();
+            while($row = $stmt->fetch()){
+                if($row["cnt"]==null){
+                    $num = 0;
+                }else{
+                    $num = $row["cnt"];
                 }
-                
-                $response["goodList"][] = [
-                    
-                    "whisperNo" => $row["WhisperNo"],
+                array_push($response["goodList"],[
+                    "whisperNo" => $row["whisperNo"],
                     "userId" => $row["userId"],
                     "userName" => $row["userName"],
                     "postDate" => $row["postDate"],
                     "content" => $row["content"],
-           
-                ];
-                if($row["flag"]!= null){
-                    $response["goodList"]["goodFlg"]= true; 
-                }else{
-                    $response["goodList"]["goodFlg"]= false; 
-                }
-              
+                    "goodCount" => $num
+                ]);
             }
-            $stmt2=null;
+            $stmt=null;
             
             
         $response["result"] = "success";
@@ -178,7 +178,7 @@
            throw new PDOException($e->getMessage(),(int)$e->getCode());
     }    
 
-    $stmt2 = null;   //SQL情報クローズ
+    $stmt = null;   //SQL情報クローズ
 
     require_once './common/mysqlClose.php';    //データベース接続解除
     

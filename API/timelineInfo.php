@@ -47,38 +47,34 @@
         
     
     try{
-            $sql1 = "select w.whisperNo,u.userId,u.userName,w.postdate,w.content";
-            $sql1 .= " from whisper as w join user as u on w.userId = u.userId leftjoin (select useId, true as flag  from goodinfo where userId =:LoginuserId) as g on u.userId = g.userId";
-            $sql1 .= " where u.userId = :userId ";
+            $sql = "SELECT w.whisperNo, w.userId, u.userName, w.postDate, w.content, g.userId as loginUser ";
+            $sql .= "FROM whisper w left join user u on u.userId = w.userId left join goodInfo g on w.whisperNo = g.whisperNo ";
+            $sql .= "where (w.userId = :userId and (g.userId = :loginUserId or g.userId is null)) ";
+            $sql .= "or w.userId = ( select followUserId from follow where userId =  :TuserId) order by w.postDate DESC";
             
-            $sql2 = "select w.whisperNo,gi.userId,u.userName,w.postdate,w.content";
-            $sql2 .= " from goodInfo as gi join whisper as w on gi.whisperNo = w.whisperNo join user as u on w.userId = u.userId left join (select userId, true as flag  from goodinfo where userId =:LoginUserId) as g on u.userId = g.userId";
-            $sql2 .= " where gi.userId = :userId;";
-            
-            $sql = $sql1 + 'union ' + $sql2;
-            
-            $stmt = $pdo->prepare($sql);   
+            $stmt = $pdo->prepare($sql);
+            $stmt -> bindParam(":TuserId",$userId,PDO::PARAM_STR);
             $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt -> bindParam(":LoginUserId",$userId,PDO::PARAM_STR);
+            $stmt -> bindParam(":loginUserId",$userId,PDO::PARAM_STR);
             $stmt -> execute();
 
             while($row = $stmt->fetch()){
-                
-                $response["whisperList"][] = [
-                    
-                    "whisperNo" => $row["WhisperNo"],
+                if($row==null){
+                    errResult('004');
+                    exit();
+                }
+                $flag = TRUE;
+                if($row["loginUser"]==null){
+                    $flag = FALSE;
+                }
+                array_push($response["whisperList"],[
+                    "whisperNo" => $row["whisperNo"],
                     "userId" => $row["userId"],
                     "userName" => $row["userName"],
                     "postDate" => $row["postDate"],
                     "content" => $row["content"],
-           
-                ];
-                if($row["flag"]!= null){
-                    $response["whisperList"]["goodFlg"]= true; 
-                }else{
-                    $response["whisperList"]["goodFlg"]= false; 
-                }
-              
+                    "goodFlg" => $flag
+                ]);
             }
             $stmt2=null;
             

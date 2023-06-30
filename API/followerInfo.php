@@ -10,7 +10,8 @@
         "result" => "error", //実行結果を格納(success or error) 成功時にsuccessに書き換える
         "errCode" => null,  //エラーコードがある場合、格納する
         "errMsg" => null,   //エラーメッセージがある場合、格納する
-        "list" => [],
+        "followList" => [],
+        "followerList" => []
     ];
     
     //リクエストの解析
@@ -40,37 +41,54 @@
        exit();
     }
     
+    require_once "./common/mysqlConnect.php";
     
     try{
-        //３．フォローリストを取得するSQL文を実行する。
-        //対象列：userID、userName、whisperCount、followCount、followerCount　※データがNULLの時は0を取得すること
-        //対象テーブル：follow、user、whisperCntView、followCntView、followerCntView
-        //取得対象：inputパラメータのユーザIDと一致するデータ
-        $sql = "sselect u.userId,u.userName,ifNull(wc.cnt,0) AS whisperCount ,ifNull(fc.cnt,0) AS followCount,ifNull(fwc.cnt,0) AS followerCount";
-	$sql .=" from user as u join whisperCntView as wc on u.userId = wc.userId join followCntView as fc on u.userId= fc.userId join followerCntView as fwc on u.userId = fwc.followUserId";
-	$sql .= " Where u.userId = :userId;'";
-        
+        $sql = "select f.followUserId, u.userName, w.cnt as whisperCnt, fv.cnt as followCnt, ferv.cnt as followerCnt ";
+        $sql .= "from follow f ";
+        $sql .= "left join user u on u.userId = f.followUserId ";
+        $sql .= "left join whisperCntView w on w.userId = f.followUserId ";
+        $sql .= "left join followCntView fv on fv.userId = f.followUserId ";
+        $sql .= "left join followerCntView ferv on ferv.followUserId = f.followUserId ";
+        $sql .= "where f.userId = :userId";
         
         $stmt = $pdo->prepare($sql);   
         $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
         $stmt -> execute();
         
         while($row = $stmt->fetch()){
-              
-            $response["followlist"][] = [
-                "userId" => $row["userId"],
+            if($row["whisperCnt"]==null){
+                $whisperCnt = 0;
+            }else{
+                $whisperCnt = $row["whisperCnt"];
+            }
+            if($row["followCnt"]==null){
+                $followCnt = 0;
+            }else{
+                $followCnt = $row["followCnt"];
+            }
+            if($row["followerCnt"]==null){
+                $followerCnt = 0;
+            }else{
+                $followerCnt = $row["followerCnt"];
+            }
+            array_push($response["followList"],[
+                "userId" => $row["followUserId"],
                 "userName" => $row["userName"],
-                "whisperCount" => $row["whisperCount"],
-                "followCount" => $row["followCount"],
-                "followerCount" => $row["followerCount"],    
-            ];
-    
+                "whisperCount" => $whisperCnt,
+                "followCount" => $followCnt,
+                "followerCount" => $followerCnt
+            ]);
         }
         $stmt = null;   // 5.SQL情報クローズ
         
-        $sql2 = "select f.userId,u.userName,ifNull(wc.cnt,0) AS whisperCount ,ifNull(fc.cnt,0) AS followCount,ifNull(fwc.cnt,0) AS followerCount";
-	$sql2 .=" from follow as f join user as u on u.userId = f.followUserId join whisperCntView as wc on u.userId = wc.userId join followCntView as fc on u.userId= fc.userId join followerCntView as fwc on u.userId = fwc.followUserId";
-	$sql2 .=" Where f.userId = :userId;";
+        $sql2 = "select f.userId, u.userName, w.cnt as whisperCnt, fv.cnt as followCnt, ferv.cnt as followerCnt ";
+        $sql2 .= "from follow f ";
+        $sql2 .= "left join user u on u.userId = f.userId ";
+        $sql2 .= "left join whisperCntView w on w.userId = f.userId ";
+        $sql2 .= "left join followCntView fv on fv.userId = f.userId ";
+        $sql2 .= "left join followerCntView ferv on ferv.followUserId = f.userId ";
+        $sql2 .= "where f.followUserId = :userId";
         
         
         $stmt2 = $pdo->prepare($sql2);   
@@ -78,17 +96,31 @@
         $stmt2 -> execute();
         
         while($row = $stmt2->fetch()){
-              
-            $response["followlist"][] = [
+            if($row["whisperCnt"]==null){
+                $whisperCnt = 0;
+            }else{
+                $whisperCnt = $row["whisperCnt"];
+            }
+            if($row["followCnt"]==null){
+                $followCnt = 0;
+            }else{
+                $followCnt = $row["followCnt"];
+            }
+            if($row["followerCnt"]==null){
+                $followerCnt = 0;
+            }else{
+                $followerCnt = $row["followerCnt"];
+            }
+            array_push($response["followerList"],[
                 "userId" => $row["userId"],
                 "userName" => $row["userName"],
-                "whisperCount" => $row["whisperCount"],
-                "followCount" => $row["followCount"],
-                "followerCount" => $row["followerCount"],    
-            ];
+                "whisperCount" => $whisperCnt,
+                "followCount" => $followCnt,
+                "followerCount" => $followerCnt
+            ]);
         }
         $stmt2 = null;   // 5.SQL情報クローズ
-        
+        $response["result"]= "success";
     }catch (PDOException $e) {
            throw new PDOException($e->getMessage(),(int)$e->getCode());
     }    

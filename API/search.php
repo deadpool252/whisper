@@ -64,47 +64,63 @@
     
     try{
         if($section == 1){
-            // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-            $sql = "SELECT u.userId,u.userName,COUNT(w.userId) as w_cnt,COUNT(f.userId) as f_cnt,COUNT(f.followUserId) as fu_cnt ";
-            $sql .= "FROM user AS u JOIN whisper as w ON u.userId = w.userId JOIN follow as f ON u.userId = f.userId";
-            $sql .= " WHERE u.userId = :userId or userName = :userName;";
+            // 送られてきたユーザIDとパスワードと一致するデータを取得する   
+            $sql = "select u.userId, u.userName, w.cnt as whisperCnt, fl.cnt as followCnt, fr.cnt as followerCnt ";
+            $sql .= "from user u left join whisperCntView w on w.userId=u.userId left join followCntView fl on fl.userId=w.userId left join followerCntView fr on fr.followUserId=w.userId ";
+            $sql .= "WHERE u.userId = :userId or u.userName = :userName";
 
             $stmt = $pdo->prepare($sql);   
-            $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt -> bindParam(":password",$pass,PDO::PARAM_STR);
+            $stmt -> bindParam(":userId",$string,PDO::PARAM_STR);
+            $stmt -> bindParam(":userName",$string,PDO::PARAM_STR);
             $stmt -> execute();
 
             while($row = $stmt->fetch()){
-                if($row==NULL){
-                    $row = 0;
-                    $response["userList"][] = [
-                        "userId" => $row["userId"],
-                        "userName" => $row["userName"],
-                        "whisperCount" => $row["w_cnt"],
-                        "followCount" => $row["f_cnt"],
-                        "followerCount" => $row["fu_cnt"]
-                    ];
+                if($row["whisperCnt"]==null){
+                    $whisperCnt = 0;
+                }else{
+                    $whisperCnt = $row["whisperCnt"];
                 }
+                if($row["followCnt"]==null){
+                    $followCnt = 0;
+                }else{
+                    $followCnt = $row["followCnt"];
+                }
+                if($row["followerCnt"]==null){
+                    $followerCnt = 0;
+                }else{
+                    $followerCnt = $row["followerCnt"];
+                }
+                array_push($response["userList"],[
+                    "userId" => $row["userId"],
+                    "userName" => $row["userName"],
+                    "whisperCount" => $whisperCnt,
+                    "followCount" => $followCnt,
+                    "followerCount" => $followerCnt
+                ]);
             }
         }else{
-            // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-            $sql = "SELECT w.whisperNo,w.userId,u.userName,w.postData,w.content,COUNT(g.userId) as g_cnt ";
-            $sql .= "FROM whisper AS w JOIN user as u ON u.userId = w.userId JOIN goodInfo as g ON u.userId = g.userId";
-            $sql .= " WHERE w.content like '%:string%';";
+            // 送られてきたユーザIDとパスワードと一致するデータを取得する
+            $sql = "select w.whisperNo, w.userId, u.userName, w.postDate, w.content, g.whisperno, g.cnt ";
+            $sql .= "from whisper w left join user u on u.userId=w.userId left join goodCntView g on g.whisperNo=w.whisperNo ";
+            $sql .= "where w.content like '%".$string."%'";
 
-            $stmt = $pdo->prepare($sql);   
-            $stmt -> bindParam(":string",$string,PDO::PARAM_STR);
+            $stmt = $pdo->prepare($sql);
             $stmt -> execute();
-
+            
             while($row = $stmt->fetch()){
-                $response["whisperList"][] = [
+                if($row["cnt"]==null){
+                    $num = 0;
+                }else{
+                    $num = $row["cnt"];
+                }
+                array_push($response["whisperList"],[
                     "whisperNo" => $row["whisperNo"],
                     "userId" => $row["userId"],
                     "userName" => $row["userName"],
                     "postDate" => $row["postDate"],
                     "content" => $row["content"],
-                    "goodCount" => $row["g_cnt"]
-                ];
+                    "goodCount" => $num
+                ]);
             }
         }    
         $response["result"] = "success";

@@ -67,7 +67,6 @@
         // 送られてきたユーザIDとパスワードと一致するデータを取得する     
         $sql = "INSERT INTO user(userId , userName, password) ";
         $sql .= "VALUES(:userId , :userName , :password);";
-        echo($sql);
         
         $stmt = $pdo->prepare($sql);   
         $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
@@ -76,12 +75,9 @@
         
         
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果がfalseでないかチェックする
-            
-            echo "行の追加に成功しました。";
             $pdo->commit(); // 成功したらコミット
             $response["result"]= "success";
         } else {
-            echo "行の追加に失敗しました。Error: " . $pdo->errorInfo()[2];
             errReuslt('001');
             $pdo->rollBack(); // 失敗したらロールバック
             exit();

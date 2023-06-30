@@ -68,8 +68,7 @@
         if($goodFlg == "True"){
             //３－１．イイねデータを挿入するSQL文を実行する。
             //テーブル：イイね情報、inputパラメータのユーザID、ささやき管理番号
-            $sql = "INSERT INTO goodInfo(userId , whisperNo) VALUES(:userId , :whisperNo );";
-            echo($sql);
+            $sql = "INSERT INTO goodInfo(userId , whisperNo) VALUES(:userId , :whisperNo )";
              
             $stmt = $pdo->prepare($sql);   
             $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
@@ -83,8 +82,6 @@
             //３－１．イイねデータを挿入するSQL文を実行する。
             //テーブル：イイね情報、inputパラメータのユーザID、ささやき管理番号
             $sql = "DELETE FROM goodInfo WHERE userId = :userId AND whisperNo = :whisperNo ";
-            echo($sql);
-             
             $stmt = $pdo->prepare($sql);   
             $stmt -> bindParam(":userId",$userId, PDO::PARAM_STR);
             $stmt -> bindParam(":whisperNo",$whisperNo, PDO::PARAM_STR);
@@ -93,12 +90,9 @@
         }
        
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果がfalseでないかチェックする
-            
-            echo "　SQL文、実行完了 ";
             $pdo->commit(); // 成功したらコミット
             $response["result"]= "success";
         } else {
-            echo "　SQL文、実行失敗 " . $pdo->errorInfo()[2];
             errReuslt('001');
             $pdo->ROLLBACK(); // 失敗したらロールバック
             exit();
