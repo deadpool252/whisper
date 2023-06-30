@@ -59,7 +59,7 @@
         // 長い名前を設定されていると保存できない
         // 保存できないファイル名がある（?.jpgなど)
         $image .= '.' . substr(strrchr($_FILES['image']['name'], '.'), 1); // アップロードされたファイルの拡張子を取得
-        $file = "'http://click.ecc.ac.jp/~whisper_c/images/$image";
+        $file = "'https://click.ecc.ac.jp/~whisper_c/images/$image";
 
         
         //ユーザデータを更新するSQL文を実行する
