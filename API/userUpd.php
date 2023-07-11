@@ -55,14 +55,20 @@
         $pdo->beginTransaction();
 
         //ユーザデータを更新するSQL文を実行する
-        // 送られてきたユーザIDとパスワードと一致するデータを取得する     
-        $sql = "UPDATE user SET userName = :userName, password = :password, profile  = :profile WHERE userId = :userId";
-        
+        // 送られてきたユーザIDとパスワードと一致するデータを取得する
+        if($postData["iconPath"]=="None"){
+            $sql = "UPDATE user SET userName = :userName, password = :password, profile  = :profile WHERE userId = :userId";
+        }else{
+            $sql = "UPDATE user SET userName = :userName, password = :password, profile  = :profile, iconPath = :iconPath WHERE userId = :userId";
+        }
         $stmt = $pdo->prepare($sql);   
         $stmt -> bindParam(":userName",$userName,PDO::PARAM_STR);
         $stmt -> bindParam(":password",$pass,PDO::PARAM_STR);
         $stmt -> bindParam(":profile",$profile,PDO::PARAM_STR);
         $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
+        if($postData["iconPath"]!="None"){
+            $stmt -> bindParam(":iconPath",$postData["iconPath"],PDO::PARAM_STR);
+        }
         
         if ($stmt -> execute() !== false) { // SQL文を実行し、結果がfalseでないかチェックする
             $pdo->commit(); // 成功したらコミット
