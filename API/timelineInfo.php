@@ -47,15 +47,15 @@
         
     
     try{
-            $sql = "SELECT w.whisperNo, w.userId, u.userName, w.postDate, w.content, g.userId as loginUser ";
-            $sql .= "FROM whisper w left join user u on u.userId = w.userId left join goodInfo g on w.whisperNo = g.whisperNo ";
-            $sql .= "where (w.userId = :userId and (g.userId = :loginUserId or g.userId is null)) ";
-            $sql .= "or w.userId = ( select followUserId from follow where userId =  :TuserId) order by w.postDate DESC";
+            $sql = "SELECT w.whisperNo, w.userId, u.userName, w.postDate, w.content ";
+            $sql .= "FROM whisper w left join user u on u.userId = w.userId ";
+            $sql .= "WHERE w.userId = :userId1 ";
+            $sql .= "OR w.userId in (select followUserId from follow where userId = :userId2) order by w.postDate DESC";
+            
             
             $stmt = $pdo->prepare($sql);
-            $stmt -> bindParam(":TuserId",$userId,PDO::PARAM_STR);
-            $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
-            $stmt -> bindParam(":loginUserId",$userId,PDO::PARAM_STR);
+            $stmt -> bindParam(":userId1",$userId,PDO::PARAM_STR);
+            $stmt -> bindParam(":userId2",$userId,PDO::PARAM_STR);
             $stmt -> execute();
 
             while($row = $stmt->fetch()){
@@ -63,22 +63,28 @@
                     errResult('004');
                     exit();
                 }
-                $flag = TRUE;
-                if($row["loginUser"]==null){
-                    $flag = FALSE;
-                }
                 array_push($response["whisperList"],[
                     "whisperNo" => $row["whisperNo"],
                     "userId" => $row["userId"],
                     "userName" => $row["userName"],
                     "postDate" => $row["postDate"],
                     "content" => $row["content"],
-                    "goodFlg" => $flag
+                    "goodFlg" => FALSE
                 ]);
             }
             $stmt2=null;
             
-            
+            for($i=0; $i<count($response["whisperList"]); $i++){
+                $sql = "SELECT whisperNo FROM goodInfo WHERE whisperNo = :whisperNo AND userId = :userId";
+                $stmt = $pdo->prepare($sql);
+                $stmt -> bindParam(":whisperNo",$response["whisperList"][$i]["whisperNo"],PDO::PARAM_STR);
+                $stmt -> bindParam(":userId",$userId,PDO::PARAM_STR);
+                $stmt -> execute();
+                while($row = $stmt->fetch()){
+                    $response["whisperList"][$i]["goodFlg"] = TRUE;
+                }
+                $stmt=null;
+            }
         $response["result"] = "success";
     } catch (PDOException $e) {
            throw new PDOException($e->getMessage(),(int)$e->getCode());
